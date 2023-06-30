@@ -5,12 +5,21 @@ In this project, I use several packages in R to clean, filter and create reports
 My goal was to extract meaningful insights from this enormous dataset so that current and future residents of New York city will know what to expect  about the living conditions, types of complaints and how to deal with these complaints encountered within the city.
 
 Here is the data dictionary:
+
 CreatedDate - date the comlpaint was registered
+
 ClosedDate - date the complaint was terminated/resolved
+
 Agency - Agency Code handling the complaint
+
 AgencyName - Agency Full Name handling the complaint
+
 ComplaintType - Type of Complaint
+
 Descriptor - Brief description of complaint
+
 Borough - Borough the complaint was registered in
+
 IncidentZip - Zip code the complaint was registered in
+
 responsetime (user-defined variable) - duration of the complaint
