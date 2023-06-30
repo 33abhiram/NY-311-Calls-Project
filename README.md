@@ -3,8 +3,7 @@
 
 This project was assigned to me as a Final Exam for my course Statistics for Informatics during my freshman year at the University of Texas at Austin, and I acknowledge that all the code was written by me in RStudio through hours of coding practice in class and detailed lecture notes.
 
-In this project, I use several packages in R to clean, filter and create reports on over 1 million rows of data about New York city's 311 calls, which is a dataset about resident complaints in New York City for years 2011 and 2012.
-My goal was to extract meaningful insights from this enormous dataset so that current and future residents of New York city will know what to expect  about the living conditions, types of complaints and how to deal with these complaints encountered within the city.
+In this project, I use several packages in R to clean, filter and create reports on over 1 million rows of data about New York city's 311 calls, which is a dataset about resident complaints in New York City for years 2011 and 2012. My goal was to extract valuable insights from this data that could be turned into actionable hypotheses and aid current and future residents of New York city.
 
 Here is the data dictionary:
 
