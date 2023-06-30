@@ -1,0 +1,223 @@
+---
+title: "Final Report"
+language: R
+date: "`r Sys.Date()`"
+author: "Abhiram Naredla"
+format:
+  html:
+    toc: true
+    embed-resources: true
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  message=FALSE
+)
+```
+
+# Obtaining the data
+
+```{r}
+load("twoMillion311calls.RData")
+library(tidyverse)
+library(lubridate)
+df <- select(df, CreatedDate, ClosedDate,Agency, AgencyName,ComplaintType,Descriptor,Borough,IncidentZip)
+df <- df |> distinct()
+df$responsetime <- as.integer(mdy_hms(df$ClosedDate) - mdy_hms(df$CreatedDate))
+df <- df |> drop_na()
+df <- df[df$responsetime>0,]
+```
+
+```{r}
+dim(df)
+```
+My main data frame consists of about 1.4 million rows and 9 relevant columns. I will analyze this data set.
+ 
+## Part 1: Numerical Description
+```{r}
+#Plot 1
+df |> count(AgencyName,sort=TRUE)
+```
+This Count function table shows the names of the Agencies that received the most complaints sorted from most complaints to least complaints (top 10 Agencies).
+
+```{r}
+#Plot 2
+summary(df$responsetime)
+```
+This statistical summary of the response time variable shows the mean, median, quartiles, etc for the response time (in seconds) of each complaint in the data set. As shown, the mean response time is skewed by many upper outliers in the data set and is very far away from the median response time.
+
+```{r}
+#Plot 3
+with(df, table(Borough))
+```
+This table shows the number of complaints by Borough in the data set. Brooklyn is the Borough that has the most complaints and Staten Island has the least.
+
+```{r}
+#Plot 4
+df |> count(ComplaintType,sort=TRUE)
+```
+This count table of Complaint Type shows the top 10 most common types of complaints in the data set. Heating is the most common type of complaint by a good margin.
+
+```{r}
+#Plot 5
+dfa <- subset(df,Borough %in% c("BRONX","BROOKLYN","MANHATTAN","QUEENS","STATEN ISLAND"))
+dfb <- subset(dfa,ComplaintType %in% c("HEATING","GENERAL CONSTRUCTION","Street Condition","Blocked Driveway"))
+table(dfb$Borough,dfb$ComplaintType)
+```
+This contingency table between Borough and Complaint Type shows the number of each type of complaint type (four most frequent complaint types) by Borough. Some notable trends deduced from this table are that Brooklyn has an even spread of all complaint types, 'Heating' is the most frequent type of complaint in Manhattan and 'Blocked Driveway' is the most frequent type of complaint in Queens.
+
+```{r}
+#Plot 6
+df_t <- df %>%
+    group_by(AgencyName) %>%
+    summarize(AverageResponseTime = round(mean(responsetime)/86400)) %>%
+    arrange(desc(AverageResponseTime))
+head(df_t,10)
+```
+This table shows the Agencies that take the most time to deal with a complaint - here the average response time is measured in days. The Agency '311 Quality Assurance' takes a whopping 1129 days on average to deal with a complaint.
+
+```{r}
+#Plot 7
+df_y <- dfa %>%
+    group_by(Borough) %>%
+    summarize(AverageResponseTime = round(mean(responsetime)/86400)) %>%
+    arrange(AverageResponseTime)
+df_y
+```
+This table shows the Average response time for a complaint grouped by Borough - average response time is in days. It shows that on average, complaints in Brooklyn last 17 days and complaints in Staten Island last 25 days.
+
+## Part 2: Visual Description
+
+```{r}
+#PLot 1
+options(scipen = 999)
+
+df7 <- dfa |>
+  group_by(Agency,Borough) |>
+  subset(select=c(Agency,Borough)) |>
+  summarize(Complaints = n()) |>
+  filter(Complaints > 10000)
+
+df8 <- df7 |>
+  group_by(Agency) |>
+  summarize(totComplaints=sum(Complaints))
+df9 <- full_join(df7,df8)
+df9 |>
+  ggplot(aes(x=reorder(Agency,totComplaints),y=Complaints,fill=Borough)) +
+  xlab("Category") +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  ggtitle("Number of complaints by Agency and Borough")
+```
+This stacked bar plot shows the number of complaints by Agency and Borough in the data set. This plot shows that there is a fairly even spread of Number of complaints by Borough for each Agency. In addition, most complaints from Boroughs 'BRONX' and 'BROOKLYN' seem to be handled by the HPD. 
+
+```{r}
+#Plot 2
+df1 <- df |>
+  group_by(ComplaintType,Borough) |>
+  subset(select=c(ComplaintType,Borough)) |>
+  summarize(Complaints = n()) |>
+  filter(Complaints > 10000)
+
+df2 <- df1 |>
+  group_by(ComplaintType) |>
+  summarize(totComplaints=sum(Complaints))
+df3 <- full_join(df1,df2)
+
+df3 |>
+  ggplot(aes(x=reorder(ComplaintType,totComplaints),y=Complaints)) +
+  xlab("Category") +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  ggtitle("Total Number of Complaints by Type")
+```
+This bar plot shows that Heating was by far the most frequent type of complaint in the data set followed by General Construction and Street Condition.
+
+```{r}
+#Plot 3
+df %>%
+    ggplot(aes(x=Agency,y=responsetime,group=Agency,fill='pink')) +
+    geom_boxplot(outlier.shape = NA) +
+    labs(title = "Average Response Time by Agency",
+         x = "Agency",
+         y = "Response Time") +
+    ylim(0,250000) +
+    coord_flip()
+    scale_fill_manual(values = "pink")
+```
+This box plot shows the average response time by Agency. It shows that Agencies like NYPD and DEP take a much shorter time to handle complaints compared to the other agencies, and agencies like HPD and DOITT take a much longer time.
+
+```{r}
+#Plot 4
+dfa %>%
+    ggplot(aes(x=Borough,fill='blue')) +
+    geom_bar() +
+    labs(title = "Response Time by Borough",
+         x = "Borough",
+         y = "Response Time") +
+    scale_fill_manual(values = "blue")
+```
+This bar plot shows the number of complaints by Borough in the data set. Brooklyn registered the most number of complaints and Staten Island had the least. This probably indicates that Borough is a variable that affects response time.
+
+```{r}
+#Plot 5
+dfx <- subset(df,ComplaintType %in% c("HEATING","GENERAL CONSTRUCTION","Street Condition","Blocked Driveway","PLUMBING"))
+
+dfx %>%
+    ggplot(aes(x=ComplaintType,y=responsetime,group=ComplaintType,fill='red')) +
+    geom_violin(scale = "area") +
+    labs(title = "Response Time for Top 5 Complaint Types",
+         x = "Complaint Type",
+         y = "Response Time") +
+    coord_flip() +
+    ylim(0,225000) +
+    scale_fill_manual(values = "red")
+```
+This violin plot shows that for a Complaint type of Blocked Driveway, there is a large density of entries with a relatively low response time. Also, Street Condition seems to have no trend in response time, and response time for the other complaint types are very similar.
+
+## Part 3: Regression
+```{r}
+dfR <- select(df,Agency,ComplaintType,Descriptor,Borough,IncidentZip,responsetime)
+
+dfR <- dfR |> drop_na()
+
+dfR$Agency <- as.factor(dfR$Agency)
+dfR$ComplaintType <- as.factor(dfR$ComplaintType)
+dfR$Descriptor <- as.factor(dfR$Descriptor)
+dfR$Borough <- as.factor(dfR$Borough)
+dfR$IncidentZip <- as.factor(dfR$IncidentZip)
+```
+I make a new data frame for Regression and convert relevant columns to Factor.
+
+```{r}
+#Trial Regression Model
+with(dfR,summary(lm(responsetime~Agency)))
+```
+This linear model was based on my hypothesis that Agency influences response time. Based on the R-Squared value of 9 percent for such a large data set, Agency is a variable that influences response time.
+
+```{r}
+#Best Regression Model
+with(dfR,summary(lm(responsetime~Agency+ComplaintType+Borough)))
+```
+After running many trial and error linear models using different variable combinations, the best regression model I came up with includes the variables Agency, ComplaintType and Borough. These are the variables that affect the response time the most. My R squared value of 14%, for such a large data set, supports my claim.
+
+## Part 4: Regression Diagnostics
+```{r}
+model<-(lm(responsetime~Agency+ComplaintType+Borough,data=dfR))
+
+plot(model)
+```
+Residuals Versus Fitted:
+Firstly, other than the point 1295366, there are no notable outliers - I think this point can be omitted from further analysis since it is the only outlier out of such a large data set of over a million values. Secondly, the solid red line seems to be aligned with the dashed zero line, indicating that the residuals have a mean of approximately zero. Third, there is no pattern in the residuals or no curve, widening or narrowing shape of the graph to further consider in the analysis.
+
+Normal Q-Q:
+In this instance, the residuals do not comply with the dashed line at all, instead trailing at the start and spiking upwards in value as the line continues. Therefore, we can assume that the residuals are not normally distributed.
+
+Scale Location:
+Here, the red line is an upwards slope, meaning that there is large variability in the standardized residuals - violation of the assumption of constant variance, also known as homoscedasticity.
+
+Residuals Versus Leverage:
+For this chart, the points 1136471 and 977611 should likely be removed as they lie outside cook's distance, even though they have good leverage values. Other than that, most of the points seem to have very low leverage values.
+
+Final Conclusion:
+In Summary, after a thorough analysis of the New York 311 calls data set, I believe the variables that affect the response time of a complaint are the Borough, the type of complaint and the agency handling the complaint. Other variables like IncidentZip seem to have little to no affect on the values of response time.
