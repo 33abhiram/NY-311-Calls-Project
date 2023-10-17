@@ -1,5 +1,5 @@
 # NY-311-Calls-in-R
-** Click on this website to view the final output of my code: https://33abhiram.github.io/NY-311-Calls-Project-using-R/
+** Click on this website to view the final output of my code: 
 
 ## Project Goal
 This project was assigned to me as a Final Exam for my course Statistics for Informatics during my freshman year at the University of Texas at Austin, and I acknowledge that all code was written by me in RStudio, using class notes and reliable documentation as reference.
